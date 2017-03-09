@@ -10,6 +10,7 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(stringr)
 
 ```
 
@@ -18,13 +19,20 @@ knitr::opts_chunk$set(echo = TRUE)
 This is a draft news release for a Census Bureau product called the Job-to-Job (J2J) Flows. It plays around with dynamic text and just basic replicability.
 
 ### Setting parameters
-First, we need to set some parameters and get the data (if this were a Shiny webapp, that might be a pulldown menu, in particular for the state). 
+First, we need to set some parameters and get the data (if this were a Shiny webapp, that might be a pulldown menu, in particular for the state). First, the key parameters:
+
+```{r keyparms}
+j2j.vintage <- "R2016Q3"
+j2j.state <- "ca"
+```
+
+Then some more technical parameters:
 
 ```{r define_parms}
-j2j.vintage <- "R2016Q3"
+schema.vintage <- "V4.1.0"
+schema.urlbase <- "https://lehd.ces.census.gov/data/schema"
 # j2jtype <- "j2j"
 j2j.seas <- "s"
-j2j.state <- "us"
 # the data area
 j2j.urlbase <- "https://lehd.ces.census.gov/data/j2j"
 j2jr.url <- paste(j2j.urlbase,j2j.vintage,"j2jr",j2j.state,sep = "/")
@@ -43,7 +51,7 @@ j2j.firmage <- "0"
 j2j.firmsize <- "0"
 # or we could simply select the agg_level
 # this is the same as all of the above
-j2j.agg_level <- "1"
+if (j2j.state == "us" ) j2j.agg_level <- "1" else j2j.agg_level <- "1025"
 j2j.plotvar <- "EEHireR"
 # and source statement
 j2j.source <- paste("U.S. Census Bureau, Job-to-Job Flows, Release",j2j.vintage,sep = " ")
@@ -66,6 +74,7 @@ close(conr)
 conr <- gzcon(url(paste(j2jr.url,j2jr.file,sep="/")))
 txt <- readLines(conr)
 j2jrdata <- read.csv(textConnection(txt))
+close(conr)
 # mergevars should be derived from metadata, for now we hard-code
 mergevars <- names(j2jdata)[1:17]
 j2jdata <- merge(x = j2jdata, y=j2jrdata, by=mergevars)
@@ -73,6 +82,13 @@ j2jdata <- merge(x = j2jdata, y=j2jrdata, by=mergevars)
 j2jdata$yqstr <- paste(j2jdata$year,j2jdata$quarter,sep="Q")
 j2jdata$linyq <- j2jdata$year + (j2jdata$quarter-1)/4
 # we also need some metadata. for later.
+# get the usps code
+#conr <- gzcon(url(paste(schema.urlbase,schema.vintage,"label_stusps",sep="/")))
+label.stusps <- read.csv(url(paste(schema.urlbase,schema.vintage,"label_stusps.csv",sep="/")))[,c("geography","stusps")]
+# get the state name
+label.fipsnum <- read.csv(url(paste(schema.urlbase,schema.vintage,"label_fipsnum.csv",sep="/")))
+states <- merge(label.stusps,label.fipsnum,by=c("geography"))
+this.geo <- subset(states,stusps==str_to_upper(j2j.state))
 ```
 
 ## Doing stuff
@@ -82,10 +98,9 @@ We now have the data and can do stuff with it.
 Now we simply plot this:
 
 #### Code for the graph
-```{r prep_figure1, echo=FALSE}
+```{r prep_figure1, echo=TRUE}
 library(ggplot2)
 library(ggthemes)
-library(stringr)
 
 analysis <- subset(j2jdata,year > 2001 & str_to_lower(seasonadj) == j2j.seas & agg_level == j2j.agg_level)
 plotdata <- analysis[,c("year","quarter",j2j.plotvar,"seasonadj","agg_level")]
@@ -109,7 +124,7 @@ gg <- ggplot(plotdata,aes_q(x=as.name("yq"),y=as.name(j2j.plotvar))) +
     plot.subtitle =element_text(hjust = 0.5),
   ) +
   xlab(paste("Source:",j2j.source,sep = " ")) +
-  ggtitle("Worker separations to new jobs within the quarter", "seasonally adjusted") 
+  ggtitle("Worker separations to new jobs within the quarter", paste(this.geo$label,"seasonally adjusted",sep=", ")) 
 ```
 #### The actual graph
 ```{r figure1, echo=FALSE}
@@ -164,9 +179,10 @@ j2j.prevy <- subset(analysis,linyq==j2j.linyq - 1)
 
 ```
 
-## The actual text
+## The actual text for `r this.geo$label`
 The fraction of workers changing jobs 
 `r j2j.compare(j2j.current[,"EEHireR"],j2j.prevy[,"EEHireR"])`
+in `r this.geo$label`
 in the `r j2j.refword(j2j.lq)` quarter of `r j2j.ly`,
 with `r j2j.print.big(j2j.current,"EEHire")` 
 (`r j2j.print.pct(j2j.current,"EEHireR")`) changing employers this quarter, 
