@@ -1,0 +1,160 @@
+---
+title: "J2J Report"
+author: "Lars Vilhuber"
+date: "March 8, 2017"
+output: 
+  html_document: 
+    keep_md: yes
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+## A toy news release
+
+This is a draft news release for a Census Bureau product called the Job-to-Job (J2J) Flows. It plays around with dynamic text and just basic replicability.
+
+### Setting parameters
+First, we need to set some parameters and get the data (if this were a Shiny webapp, that might be a pulldown menu, in particular for the state). 
+
+```{r define_parms}
+j2j.vintage <- "R2016Q3"
+# j2jtype <- "j2j"
+j2j.type <- "j2jr"
+j2j.seas <- "s"
+j2j.state <- "us"
+# the data area
+j2j.urlbase <- "https://lehd.ces.census.gov/data/j2j"
+j2j.url <- paste(j2j.urlbase,j2j.vintage,j2j.type,j2j.state,sep = "/")
+j2j.file <- paste(j2j.type,j2j.state,"all.csv.gz",sep="_")
+# select all sorts of demo and firm vars
+# no testing if they are valid!
+j2j.industry <- "00" 
+j2j.sex <- "0"
+j2j.agegrp <- "A00"
+j2j.race <- "A0"
+j2j.ethnicity <- "A0"
+j2j.education <- "E0"
+j2j.firmage <- "0"
+j2j.firmsize <- "0"
+# or we could simply select the agg_level
+# this is the same as all of the above
+j2j.agg_level <- "1"
+j2j.plotvar <- "EEHireR"
+# and source statement
+j2j.source <- paste("U.S. Census Bureau, Job-to-Job Flows, Release",j2j.vintage,sep = " ")
+# our preferred format for pct numbers
+j2j.fmtpct <- "%1.1f"
+```
+
+We are going to work with seasonally `r ifelse(j2j.seas == "s",print(""),print("un"))`adjusted `r ifelse(j2j.type == "j2jr",print("rates"),print("levels"))` from the `r j2j.vintage` release.
+
+### Getting the data
+Getting the data implies downloading the file "`r j2j.file`" from `r j2j.url`.
+```{r readj2j}
+# we need the full data
+conr <- gzcon(url(paste(j2j.url,j2j.file,sep="/")))
+txt <- readLines(conr)
+j2jdata <- read.csv(textConnection(txt))
+j2jdata$yqstr <- paste(j2jdata$year,j2jdata$quarter,sep="Q")
+j2jdata$linyq <- j2jdata$year + (j2jdata$quarter-1)/4
+# we also need some metadata. for later.
+```
+
+## Doing stuff
+We now have the data and can do stuff with it.
+
+### The graph
+Now we simply plot this:
+
+#### Code for the graph
+```{r prep_figure1, echo=FALSE}
+library(ggplot2)
+library(ggthemes)
+library(stringr)
+
+analysis <- subset(j2jdata,year > 2001 & str_to_lower(seasonadj) == j2j.seas & agg_level == j2j.agg_level)
+plotdata <- analysis[,c("year","quarter",j2j.plotvar,"seasonadj","agg_level")]
+# scale up the fractions
+#plotdata[3] <- plotdata[3]*100
+plotdata$yq <- plotdata$year + (plotdata$quarter-1)/4
+gg <- ggplot(plotdata,aes_q(x=as.name("yq"),y=as.name(j2j.plotvar))) +
+  geom_line() + 
+  geom_point() +
+  scale_x_continuous(breaks=seq(min(plotdata$year), max(plotdata$year), 1)) +
+  scale_y_continuous(labels = scales::percent,
+                     breaks=seq(0, max(plotdata[,j2j.plotvar]+0.005), 0.005),
+                     limits=c(0,max(plotdata[,j2j.plotvar]+0.005))
+                     ) +
+  theme_economist_white() +
+  theme(
+    axis.title.y=element_blank(),
+    axis.title=element_text(size=8,face="italic",hjust=1),
+    axis.text.x=element_text(angle=+45,hjust=-0.02),
+    plot.title = element_text(hjust = 0.5),
+    plot.subtitle =element_text(hjust = 0.5),
+  ) +
+  xlab(paste("Source:",j2j.source,sep = " ")) +
+  ggtitle("Worker separations to new jobs within the quarter", "seasonally adjusted") 
+```
+#### The actual graph
+```{r figure1, echo=FALSE}
+gg
+```
+
+### The text
+Now we can reference some of the data as well.
+
+#### Preparing the text
+```{r prep_analysis}
+j2j.lyq <- max(analysis$yqstr)
+j2j.ly <- subset(analysis,yqstr == j2j.lyq)[1,"year"]
+j2j.lq <- subset(analysis,yqstr == j2j.lyq)[1,"quarter"]
+j2j.linyq <- j2j.ly + (j2j.lq -1)/4
+
+j2j.refword <- function(cardinal) {
+  if ( cardinal == 1 ) tmpsuffix <- "first"
+  if ( cardinal == 2 ) tmpsuffix <- "second"
+  if ( cardinal == 3 ) tmpsuffix <- "third"
+  if ( cardinal == 4 ) tmpsuffix <- "fourth"
+  return(tmpsuffix)
+}
+
+j2j.compare <- function(this,last) {
+  comp <- (this - last)/last * 100
+  if ( comp > 0 ) word <- "grew"
+  if ( comp < 0 ) word <- "shrunk"
+  # 1 percent difference in numbers is unchanged
+  if ( abs(comp) < 1 ) word <- "were largely unchanged"
+  return(word)
+}
+# pick our poison
+j2j.current <- subset(analysis,linyq==j2j.linyq)
+j2j.prevq <- subset(analysis,linyq==j2j.linyq - 0.25)
+j2j.prevy <- subset(analysis,linyq==j2j.linyq - 1)
+
+```
+
+## The actual text
+The fraction of workers changing jobs 
+`r j2j.compare(j2j.current[,j2j.plotvar],j2j.prevy[,j2j.plotvar])`
+in the `r j2j.refword(j2j.lq)` quarter of `r j2j.ly`,
+with `r sprintf(j2j.fmtpct,round(j2j.current[,j2j.plotvar]*100,1))`% changing employers this quarter, 
+compared to 
+`r sprintf(j2j.fmtpct,round(j2j.prevy[,j2j.plotvar]*100,1))`% 
+in the `r j2j.refword(j2j.lq)` quarter of `r j2j.ly - 1`.
+Flows into employment
+`r j2j.compare(j2j.current[,"NEHireR"],j2j.prevy[,"NEHireR"])`, 
+with `r sprintf(j2j.fmtpct,round(j2j.current[,"NEHireR"]*100,1))`% 
+employed on the last day of the quarter who did not hold a job on the first day of the quarter,
+compared to `r sprintf(j2j.fmtpct,round(j2j.prevy[,"NEHireR"]*100,1))`% a year ago.
+Separations to non-employment 
+`r j2j.compare(j2j.current[,"ENSepR"],j2j.prevy[,"ENSepR"])`, 
+with `r sprintf(j2j.fmtpct,round(j2j.current[,"ENSepR"]*100,1))`% 
+employed on the first day of the quarter and no longer employed on the last day of the quarter,
+compared to `r sprintf(j2j.fmtpct,round(j2j.prevy[,"ENSepR"]*100,1))`% a year ago.
+
+
