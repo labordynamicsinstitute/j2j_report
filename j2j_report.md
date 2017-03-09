@@ -9,14 +9,22 @@ March 8, 2017
 This is a draft news release for a Census Bureau product called the Job-to-Job (J2J) Flows. It plays around with dynamic text and just basic replicability.
 
 ### Setting parameters
-First, we need to set some parameters and get the data (if this were a Shiny webapp, that might be a pulldown menu, in particular for the state). 
+First, we need to set some parameters and get the data (if this were a Shiny webapp, that might be a pulldown menu, in particular for the state). First, the key parameters:
 
 
 ```r
 j2j.vintage <- "R2016Q3"
+j2j.state <- "ca"
+```
+
+Then some more technical parameters:
+
+
+```r
+schema.vintage <- "V4.1.0"
+schema.urlbase <- "https://lehd.ces.census.gov/data/schema"
 # j2jtype <- "j2j"
 j2j.seas <- "s"
-j2j.state <- "us"
 # the data area
 j2j.urlbase <- "https://lehd.ces.census.gov/data/j2j"
 j2jr.url <- paste(j2j.urlbase,j2j.vintage,"j2jr",j2j.state,sep = "/")
@@ -35,7 +43,7 @@ j2j.firmage <- "0"
 j2j.firmsize <- "0"
 # or we could simply select the agg_level
 # this is the same as all of the above
-j2j.agg_level <- "1"
+if (j2j.state == "us" ) j2j.agg_level <- "1" else j2j.agg_level <- "1025"
 j2j.plotvar <- "EEHireR"
 # and source statement
 j2j.source <- paste("U.S. Census Bureau, Job-to-Job Flows, Release",j2j.vintage,sep = " ")
@@ -47,7 +55,7 @@ j2j.fmtbig <- 3
 We are going to work with seasonally adjusted data from the R2016Q3 release.
 
 ### Getting the data
-Getting the data implies downloading the files "j2j_us_all.csv.gz" and "j2jr_us_all.csv.gz" from https://lehd.ces.census.gov/data/j2j.
+Getting the data implies downloading the files "j2j_ca_all.csv.gz" and "j2jr_ca_all.csv.gz" from https://lehd.ces.census.gov/data/j2j.
 
 ```r
 # we need the full data
@@ -59,6 +67,7 @@ close(conr)
 conr <- gzcon(url(paste(j2jr.url,j2jr.file,sep="/")))
 txt <- readLines(conr)
 j2jrdata <- read.csv(textConnection(txt))
+close(conr)
 # mergevars should be derived from metadata, for now we hard-code
 mergevars <- names(j2jdata)[1:17]
 j2jdata <- merge(x = j2jdata, y=j2jrdata, by=mergevars)
@@ -66,6 +75,13 @@ j2jdata <- merge(x = j2jdata, y=j2jrdata, by=mergevars)
 j2jdata$yqstr <- paste(j2jdata$year,j2jdata$quarter,sep="Q")
 j2jdata$linyq <- j2jdata$year + (j2jdata$quarter-1)/4
 # we also need some metadata. for later.
+# get the usps code
+#conr <- gzcon(url(paste(schema.urlbase,schema.vintage,"label_stusps",sep="/")))
+label.stusps <- read.csv(url(paste(schema.urlbase,schema.vintage,"label_stusps.csv",sep="/")))[,c("geography","stusps")]
+# get the state name
+label.fipsnum <- read.csv(url(paste(schema.urlbase,schema.vintage,"label_fipsnum.csv",sep="/")))
+states <- merge(label.stusps,label.fipsnum,by=c("geography"))
+this.geo <- subset(states,stusps==str_to_upper(j2j.state))
 ```
 
 ## Doing stuff
@@ -79,7 +95,6 @@ Now we simply plot this:
 ```r
 library(ggplot2)
 library(ggthemes)
-library(stringr)
 
 analysis <- subset(j2jdata,year > 2001 & str_to_lower(seasonadj) == j2j.seas & agg_level == j2j.agg_level)
 plotdata <- analysis[,c("year","quarter",j2j.plotvar,"seasonadj","agg_level")]
@@ -103,7 +118,7 @@ gg <- ggplot(plotdata,aes_q(x=as.name("yq"),y=as.name(j2j.plotvar))) +
     plot.subtitle =element_text(hjust = 0.5),
   ) +
   xlab(paste("Source:",j2j.source,sep = " ")) +
-  ggtitle("Worker separations to new jobs within the quarter", "seasonally adjusted") 
+  ggtitle("Worker separations to new jobs within the quarter", paste(this.geo$label,"seasonally adjusted",sep=", ")) 
 ```
 #### The actual graph
 ![](j2j_report_files/figure-html/figure1-1.png)<!-- -->
@@ -156,26 +171,27 @@ j2j.prevq <- subset(analysis,linyq==j2j.linyq - 0.25)
 j2j.prevy <- subset(analysis,linyq==j2j.linyq - 1)
 ```
 
-## The actual text
+## The actual text for California
 The fraction of workers changing jobs 
 grew
+in California
 in the third quarter of 2015,
-with 4,840,000 
-(3.9%) changing employers this quarter, 
-compared to 4,440,000 
-(3.6%) 
+with 471,000 
+(3.4%) changing employers this quarter, 
+compared to 441,000 
+(3.1%) 
 in the third quarter of 2014.
 Flows into employment
 were largely unchanged, 
-with 8,780,000
+with 1,030,000
 (7.0%)
 employed on the last day of the quarter who did not hold a job on the first day of the quarter,
 compared to 7.0% a year ago.
 Separations to non-employment 
 grew, 
-with 8,440,000
-(6.7%) 
+with 919,000
+(6.5%) 
 employed on the first day of the quarter and no longer employed on the last day of the quarter,
-compared to 6.4% a year ago.
+compared to 6.3% a year ago.
 
 
