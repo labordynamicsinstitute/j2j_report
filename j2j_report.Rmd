@@ -23,7 +23,7 @@ First, we need to set some parameters and get the data (if this were a Shiny web
 
 ```{r keyparms}
 j2j.vintage <- "R2016Q3"
-j2j.state <- "ca"
+j2j.state <- "us"
 ```
 
 Then some more technical parameters:
@@ -84,10 +84,13 @@ j2jdata$linyq <- j2jdata$year + (j2jdata$quarter-1)/4
 # we also need some metadata. for later.
 # get the usps code
 #conr <- gzcon(url(paste(schema.urlbase,schema.vintage,"label_stusps",sep="/")))
-label.stusps <- read.csv(url(paste(schema.urlbase,schema.vintage,"label_stusps.csv",sep="/")))[,c("geography","stusps")]
+label.stusps <- read.csv(url(paste(schema.urlbase,schema.vintage,"label_stusps.csv",sep="/")),stringsAsFactors = FALSE)[,c("geography","stusps")]
 # get the state name
-label.fipsnum <- read.csv(url(paste(schema.urlbase,schema.vintage,"label_fipsnum.csv",sep="/")))
-states <- merge(label.stusps,label.fipsnum,by=c("geography"))
+label.fipsnum <- read.csv(url(paste(schema.urlbase,schema.vintage,"label_fipsnum.csv",sep="/")),stringsAsFactors = FALSE)
+states <- merge(label.stusps,label.fipsnum,by=c("geography"),all.y = TRUE)
+# some minor cosmetic corrections
+states[states$geography == 0,c("stusps","label")] <- c("US","United States")
+
 this.geo <- subset(states,stusps==str_to_upper(j2j.state))
 ```
 

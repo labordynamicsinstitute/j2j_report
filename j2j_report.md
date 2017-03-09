@@ -14,7 +14,7 @@ First, we need to set some parameters and get the data (if this were a Shiny web
 
 ```r
 j2j.vintage <- "R2016Q3"
-j2j.state <- "ca"
+j2j.state <- "us"
 ```
 
 Then some more technical parameters:
@@ -55,7 +55,7 @@ j2j.fmtbig <- 3
 We are going to work with seasonally adjusted data from the R2016Q3 release.
 
 ### Getting the data
-Getting the data implies downloading the files "j2j_ca_all.csv.gz" and "j2jr_ca_all.csv.gz" from https://lehd.ces.census.gov/data/j2j.
+Getting the data implies downloading the files "j2j_us_all.csv.gz" and "j2jr_us_all.csv.gz" from https://lehd.ces.census.gov/data/j2j.
 
 ```r
 # we need the full data
@@ -77,10 +77,13 @@ j2jdata$linyq <- j2jdata$year + (j2jdata$quarter-1)/4
 # we also need some metadata. for later.
 # get the usps code
 #conr <- gzcon(url(paste(schema.urlbase,schema.vintage,"label_stusps",sep="/")))
-label.stusps <- read.csv(url(paste(schema.urlbase,schema.vintage,"label_stusps.csv",sep="/")))[,c("geography","stusps")]
+label.stusps <- read.csv(url(paste(schema.urlbase,schema.vintage,"label_stusps.csv",sep="/")),stringsAsFactors = FALSE)[,c("geography","stusps")]
 # get the state name
-label.fipsnum <- read.csv(url(paste(schema.urlbase,schema.vintage,"label_fipsnum.csv",sep="/")))
-states <- merge(label.stusps,label.fipsnum,by=c("geography"))
+label.fipsnum <- read.csv(url(paste(schema.urlbase,schema.vintage,"label_fipsnum.csv",sep="/")),stringsAsFactors = FALSE)
+states <- merge(label.stusps,label.fipsnum,by=c("geography"),all.y = TRUE)
+# some minor cosmetic corrections
+states[states$geography == 0,c("stusps","label")] <- c("US","United States")
+
 this.geo <- subset(states,stusps==str_to_upper(j2j.state))
 ```
 
@@ -171,27 +174,27 @@ j2j.prevq <- subset(analysis,linyq==j2j.linyq - 0.25)
 j2j.prevy <- subset(analysis,linyq==j2j.linyq - 1)
 ```
 
-## The actual text for California
+## The actual text for United States
 The fraction of workers changing jobs 
 grew
-in California
+in United States
 in the third quarter of 2015,
-with 471,000 
-(3.4%) changing employers this quarter, 
-compared to 441,000 
-(3.1%) 
+with 4,840,000 
+(3.9%) changing employers this quarter, 
+compared to 4,440,000 
+(3.6%) 
 in the third quarter of 2014.
 Flows into employment
 were largely unchanged, 
-with 1,030,000
+with 8,780,000
 (7.0%)
 employed on the last day of the quarter who did not hold a job on the first day of the quarter,
 compared to 7.0% a year ago.
 Separations to non-employment 
 grew, 
-with 919,000
-(6.5%) 
+with 8,440,000
+(6.7%) 
 employed on the first day of the quarter and no longer employed on the last day of the quarter,
-compared to 6.3% a year ago.
+compared to 6.4% a year ago.
 
 
