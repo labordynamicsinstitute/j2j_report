@@ -144,13 +144,14 @@ $(document).ready(function () {
 <p>First, we need to set some parameters and get the data (if this were a Shiny webapp, that might be a pulldown menu, in particular for the state).</p>
 <pre class="r"><code>j2j.vintage &lt;- &quot;R2016Q3&quot;
 # j2jtype &lt;- &quot;j2j&quot;
-j2j.type &lt;- &quot;j2jr&quot;
 j2j.seas &lt;- &quot;s&quot;
 j2j.state &lt;- &quot;us&quot;
 # the data area
 j2j.urlbase &lt;- &quot;https://lehd.ces.census.gov/data/j2j&quot;
-j2j.url &lt;- paste(j2j.urlbase,j2j.vintage,j2j.type,j2j.state,sep = &quot;/&quot;)
-j2j.file &lt;- paste(j2j.type,j2j.state,&quot;all.csv.gz&quot;,sep=&quot;_&quot;)
+j2jr.url &lt;- paste(j2j.urlbase,j2j.vintage,&quot;j2jr&quot;,j2j.state,sep = &quot;/&quot;)
+j2jr.file &lt;- paste(&quot;j2jr&quot;,j2j.state,&quot;all.csv.gz&quot;,sep=&quot;_&quot;)
+j2j.url &lt;- paste(j2j.urlbase,j2j.vintage,&quot;j2j&quot;,j2j.state,sep = &quot;/&quot;)
+j2j.file &lt;- paste(&quot;j2j&quot;,j2j.state,&quot;all.csv.gz&quot;,sep=&quot;_&quot;)
 # select all sorts of demo and firm vars
 # no testing if they are valid!
 j2j.industry &lt;- &quot;00&quot; 
@@ -168,16 +169,26 @@ j2j.plotvar &lt;- &quot;EEHireR&quot;
 # and source statement
 j2j.source &lt;- paste(&quot;U.S. Census Bureau, Job-to-Job Flows, Release&quot;,j2j.vintage,sep = &quot; &quot;)
 # our preferred format for pct numbers
-j2j.fmtpct &lt;- &quot;%1.1f&quot;</code></pre>
-<p>We are going to work with seasonally adjusted rates from the R2016Q3 release.</p>
+j2j.fmtpct &lt;- &quot;%1.1f%%&quot;
+j2j.fmtbig &lt;- 3</code></pre>
+<p>We are going to work with seasonally adjusted data from the R2016Q3 release.</p>
 </div>
 <div id="getting-the-data" class="section level3">
 <h3>Getting the data</h3>
-<p>Getting the data implies downloading the file “j2jr_us_all.csv.gz” from <a href="https://lehd.ces.census.gov/data/j2j/R2016Q3/j2jr/us" class="uri">https://lehd.ces.census.gov/data/j2j/R2016Q3/j2jr/us</a>.</p>
+<p>Getting the data implies downloading the files “j2j_us_all.csv.gz” and “j2jr_us_all.csv.gz” from <a href="https://lehd.ces.census.gov/data/j2j" class="uri">https://lehd.ces.census.gov/data/j2j</a>.</p>
 <pre class="r"><code># we need the full data
 conr &lt;- gzcon(url(paste(j2j.url,j2j.file,sep=&quot;/&quot;)))
 txt &lt;- readLines(conr)
 j2jdata &lt;- read.csv(textConnection(txt))
+close(conr)
+# and the rates
+conr &lt;- gzcon(url(paste(j2jr.url,j2jr.file,sep=&quot;/&quot;)))
+txt &lt;- readLines(conr)
+j2jrdata &lt;- read.csv(textConnection(txt))
+# mergevars should be derived from metadata, for now we hard-code
+mergevars &lt;- names(j2jdata)[1:17]
+j2jdata &lt;- merge(x = j2jdata, y=j2jrdata, by=mergevars)
+
 j2jdata$yqstr &lt;- paste(j2jdata$year,j2jdata$quarter,sep=&quot;Q&quot;)
 j2jdata$linyq &lt;- j2jdata$year + (j2jdata$quarter-1)/4
 # we also need some metadata. for later.</code></pre>
@@ -223,7 +234,22 @@ j2j.compare &lt;- function(this,last) {
   if ( abs(comp) &lt; 1 ) word &lt;- &quot;were largely unchanged&quot;
   return(word)
 }
-# pick our poison
+
+j2j.print.pct &lt;- function(data,name) {
+  return(sprintf(j2j.fmtpct,
+                       round(data[,name]*100,1)
+                       )
+         )
+}
+
+j2j.print.big &lt;- function(data,name) {
+  return(format(
+            signif(round(data[,name],0),j2j.fmtbig),
+            big.mark=&quot;,&quot;,scientific=FALSE)
+         )
+}
+
+# pick our poison, for easy reference
 j2j.current &lt;- subset(analysis,linyq==j2j.linyq)
 j2j.prevq &lt;- subset(analysis,linyq==j2j.linyq - 0.25)
 j2j.prevy &lt;- subset(analysis,linyq==j2j.linyq - 1)</code></pre>
@@ -232,7 +258,7 @@ j2j.prevy &lt;- subset(analysis,linyq==j2j.linyq - 1)</code></pre>
 </div>
 <div id="the-actual-text" class="section level2">
 <h2>The actual text</h2>
-<p>The fraction of workers changing jobs grew in the third quarter of 2015, with 3.9% changing employers this quarter, compared to 3.6% in the third quarter of 2014. Flows into employment were largely unchanged, with 7.0% employed on the last day of the quarter who did not hold a job on the first day of the quarter, compared to 7.0% a year ago. Separations to non-employment grew, with 6.7% employed on the first day of the quarter and no longer employed on the last day of the quarter, compared to 6.4% a year ago.</p>
+<p>The fraction of workers changing jobs grew in the third quarter of 2015, with 4,840,000 (3.9%) changing employers this quarter, compared to 4,440,000 (3.6%) in the third quarter of 2014. Flows into employment were largely unchanged, with 8,780,000 (7.0%) employed on the last day of the quarter who did not hold a job on the first day of the quarter, compared to 7.0% a year ago. Separations to non-employment grew, with 8,440,000 (6.7%) employed on the first day of the quarter and no longer employed on the last day of the quarter, compared to 6.4% a year ago.</p>
 </div>
 
 
