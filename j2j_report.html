@@ -202,6 +202,33 @@ j2jdata$linyq &lt;- j2jdata$year + (j2jdata$quarter-1)/4
 <p>Now we simply plot this:</p>
 <div id="code-for-the-graph" class="section level4">
 <h4>Code for the graph</h4>
+<pre class="r"><code>library(ggplot2)
+library(ggthemes)
+library(stringr)
+
+analysis &lt;- subset(j2jdata,year &gt; 2001 &amp; str_to_lower(seasonadj) == j2j.seas &amp; agg_level == j2j.agg_level)
+plotdata &lt;- analysis[,c(&quot;year&quot;,&quot;quarter&quot;,j2j.plotvar,&quot;seasonadj&quot;,&quot;agg_level&quot;)]
+# scale up the fractions
+#plotdata[3] &lt;- plotdata[3]*100
+plotdata$yq &lt;- plotdata$year + (plotdata$quarter-1)/4
+gg &lt;- ggplot(plotdata,aes_q(x=as.name(&quot;yq&quot;),y=as.name(j2j.plotvar))) +
+  geom_line() + 
+  geom_point() +
+  scale_x_continuous(breaks=seq(min(plotdata$year), max(plotdata$year), 1)) +
+  scale_y_continuous(labels = scales::percent,
+                     breaks=seq(0, max(plotdata[,j2j.plotvar]+0.005), 0.005),
+                     limits=c(0,max(plotdata[,j2j.plotvar]+0.005))
+                     ) +
+  theme_economist_white() +
+  theme(
+    axis.title.y=element_blank(),
+    axis.title=element_text(size=8,face=&quot;italic&quot;,hjust=1),
+    axis.text.x=element_text(angle=+45,hjust=-0.02),
+    plot.title = element_text(hjust = 0.5),
+    plot.subtitle =element_text(hjust = 0.5),
+  ) +
+  xlab(paste(&quot;Source:&quot;,j2j.source,sep = &quot; &quot;)) +
+  ggtitle(&quot;Worker separations to new jobs within the quarter&quot;, &quot;seasonally adjusted&quot;) </code></pre>
 </div>
 <div id="the-actual-graph" class="section level4">
 <h4>The actual graph</h4>

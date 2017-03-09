@@ -82,7 +82,7 @@ We now have the data and can do stuff with it.
 Now we simply plot this:
 
 #### Code for the graph
-```{r prep_figure1, echo=FALSE}
+```{r prep_figure1, echo=TRUE}
 library(ggplot2)
 library(ggthemes)
 library(stringr)

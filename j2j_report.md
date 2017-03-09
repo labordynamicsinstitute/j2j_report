@@ -76,6 +76,35 @@ Now we simply plot this:
 
 #### Code for the graph
 
+```r
+library(ggplot2)
+library(ggthemes)
+library(stringr)
+
+analysis <- subset(j2jdata,year > 2001 & str_to_lower(seasonadj) == j2j.seas & agg_level == j2j.agg_level)
+plotdata <- analysis[,c("year","quarter",j2j.plotvar,"seasonadj","agg_level")]
+# scale up the fractions
+#plotdata[3] <- plotdata[3]*100
+plotdata$yq <- plotdata$year + (plotdata$quarter-1)/4
+gg <- ggplot(plotdata,aes_q(x=as.name("yq"),y=as.name(j2j.plotvar))) +
+  geom_line() + 
+  geom_point() +
+  scale_x_continuous(breaks=seq(min(plotdata$year), max(plotdata$year), 1)) +
+  scale_y_continuous(labels = scales::percent,
+                     breaks=seq(0, max(plotdata[,j2j.plotvar]+0.005), 0.005),
+                     limits=c(0,max(plotdata[,j2j.plotvar]+0.005))
+                     ) +
+  theme_economist_white() +
+  theme(
+    axis.title.y=element_blank(),
+    axis.title=element_text(size=8,face="italic",hjust=1),
+    axis.text.x=element_text(angle=+45,hjust=-0.02),
+    plot.title = element_text(hjust = 0.5),
+    plot.subtitle =element_text(hjust = 0.5),
+  ) +
+  xlab(paste("Source:",j2j.source,sep = " ")) +
+  ggtitle("Worker separations to new jobs within the quarter", "seasonally adjusted") 
+```
 #### The actual graph
 ![](j2j_report_files/figure-html/figure1-1.png)<!-- -->
 
