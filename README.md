@@ -7,7 +7,7 @@ se" style document based on a particular release of J2J data.
 - Rstudio
 - Access to the internet
 
-The [j2j_report.md]() document is a sample, derived from the [j2j_report.Rmd]() file. A HTML document is generated as [j2j_report.html]().
+The [j2j_report.md](j2j_report.md) document is a sample, derived from the [j2j_report.Rmd](j2j_report.Rmd) file. A HTML document is generated as [j2j_report.html](j2j_report.html).
 
 Feel free to clone this repository and play with it. Let us know of useful applications.
 
