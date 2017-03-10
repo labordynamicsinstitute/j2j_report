@@ -10,7 +10,19 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-library(stringr)
+pkgTest <- function(x)
+  {
+  # Test for packages
+    if (!require(x,character.only = TRUE))
+    {
+      # if package is not there, we install it
+      install.packages(x,dep=TRUE)
+        if(!require(x,character.only = TRUE)) stop("Package not found")
+    }
+  }
+pkgTest("ggplot2")
+pkgTest("ggthemes")
+pkgTest("stringr")
 
 ```
 
@@ -102,8 +114,6 @@ Now we simply plot this:
 
 #### Code for the graph
 ```{r prep_figure1, echo=TRUE}
-library(ggplot2)
-library(ggthemes)
 
 analysis <- subset(j2jdata,year > 2001 & str_to_lower(seasonadj) == j2j.seas & agg_level == j2j.agg_level)
 plotdata <- analysis[,c("year","quarter",j2j.plotvar,"seasonadj","agg_level")]

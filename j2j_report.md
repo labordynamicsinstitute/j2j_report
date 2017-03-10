@@ -96,9 +96,6 @@ Now we simply plot this:
 #### Code for the graph
 
 ```r
-library(ggplot2)
-library(ggthemes)
-
 analysis <- subset(j2jdata,year > 2001 & str_to_lower(seasonadj) == j2j.seas & agg_level == j2j.agg_level)
 plotdata <- analysis[,c("year","quarter",j2j.plotvar,"seasonadj","agg_level")]
 # scale up the fractions

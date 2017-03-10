@@ -216,10 +216,7 @@ this.geo &lt;- subset(states,stusps==str_to_upper(j2j.state))</code></pre>
 <p>Now we simply plot this:</p>
 <div id="code-for-the-graph" class="section level4">
 <h4>Code for the graph</h4>
-<pre class="r"><code>library(ggplot2)
-library(ggthemes)
-
-analysis &lt;- subset(j2jdata,year &gt; 2001 &amp; str_to_lower(seasonadj) == j2j.seas &amp; agg_level == j2j.agg_level)
+<pre class="r"><code>analysis &lt;- subset(j2jdata,year &gt; 2001 &amp; str_to_lower(seasonadj) == j2j.seas &amp; agg_level == j2j.agg_level)
 plotdata &lt;- analysis[,c(&quot;year&quot;,&quot;quarter&quot;,j2j.plotvar,&quot;seasonadj&quot;,&quot;agg_level&quot;)]
 # scale up the fractions
 #plotdata[3] &lt;- plotdata[3]*100
