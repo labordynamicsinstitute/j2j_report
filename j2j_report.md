@@ -13,20 +13,24 @@ First, we need to set some parameters and get the data (if this were a Shiny web
 
 
 ```r
-j2j.vintage <- "R2016Q3"
+j2j.vintage <- "R2017Q2"
 j2j.state <- "us"
+# We're going to use seasonally adjusted data
+j2j.seas <- "s"
+# the data area
+j2j.urlbase <- "https://lehd.ces.census.gov/data/j2j"
+# This should be defined dynamically
+j2j.version <- paste(j2j.urlbase,j2j.vintage,"j2j",j2j.state,"version_j2j.txt",sep = "/")
+# Sample contents of version_j2j.txt:
+# J2J US 00 2000:2-2016:2 V4.2b-draft R2017Q2 j2jpu_us_20170714_2008
+schema.vintage <- "V4.2b-draft"
+schema.urlbase <- "https://lehd.ces.census.gov/data/schema"
 ```
 
 Then some more technical parameters:
 
 
 ```r
-schema.vintage <- "V4.1.0"
-schema.urlbase <- "https://lehd.ces.census.gov/data/schema"
-# j2jtype <- "j2j"
-j2j.seas <- "s"
-# the data area
-j2j.urlbase <- "https://lehd.ces.census.gov/data/j2j"
 j2jr.url <- paste(j2j.urlbase,j2j.vintage,"j2jr",j2j.state,sep = "/")
 j2jr.file <- paste("j2jr",j2j.state,"all.csv.gz",sep="_")
 j2j.url <- paste(j2j.urlbase,j2j.vintage,"j2j",j2j.state,sep = "/")
@@ -52,7 +56,7 @@ j2j.fmtpct <- "%1.1f%%"
 j2j.fmtbig <- 3
 ```
 
-We are going to work with seasonally adjusted data from the R2016Q3 release.
+We are going to work with seasonally adjusted data from the R2017Q2 release.
 
 ### Getting the data
 Getting the data implies downloading the files "j2j_us_all.csv.gz" and "j2jr_us_all.csv.gz" from https://lehd.ces.census.gov/data/j2j.
@@ -173,25 +177,25 @@ j2j.prevy <- subset(analysis,linyq==j2j.linyq - 1)
 
 ## The actual text for United States
 The fraction of workers changing jobs 
-grew
+were largely unchanged
 in United States
-in the third quarter of 2015,
-with 4,840,000 
-(3.9%) changing employers this quarter, 
-compared to 4,440,000 
-(3.6%) 
-in the third quarter of 2014.
+in the second quarter of 2016,
+with 4,820,000 
+(3.7%) changing employers this quarter, 
+compared to 4,670,000 
+(3.7%) 
+in the second quarter of 2015.
 Flows into employment
-were largely unchanged, 
-with 8,780,000
-(7.0%)
+shrunk, 
+with 8,660,000
+(6.8%)
 employed on the last day of the quarter who did not hold a job on the first day of the quarter,
-compared to 7.0% a year ago.
+compared to 6.9% a year ago.
 Separations to non-employment 
 grew, 
-with 8,440,000
-(6.7%) 
+with 8,500,000
+(6.6%) 
 employed on the first day of the quarter and no longer employed on the last day of the quarter,
-compared to 6.4% a year ago.
+compared to 6.5% a year ago.
 
 

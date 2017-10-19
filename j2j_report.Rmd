@@ -34,19 +34,23 @@ This is a draft news release for a Census Bureau product called the Job-to-Job (
 First, we need to set some parameters and get the data (if this were a Shiny webapp, that might be a pulldown menu, in particular for the state). First, the key parameters:
 
 ```{r keyparms}
-j2j.vintage <- "R2016Q3"
+j2j.vintage <- "R2017Q2"
 j2j.state <- "us"
+# We're going to use seasonally adjusted data
+j2j.seas <- "s"
+# the data area
+j2j.urlbase <- "https://lehd.ces.census.gov/data/j2j"
+# This should be defined dynamically
+j2j.version <- paste(j2j.urlbase,j2j.vintage,"j2j",j2j.state,"version_j2j.txt",sep = "/")
+# Sample contents of version_j2j.txt:
+# J2J US 00 2000:2-2016:2 V4.2b-draft R2017Q2 j2jpu_us_20170714_2008
+schema.vintage <- "V4.2b-draft"
+schema.urlbase <- "https://lehd.ces.census.gov/data/schema"
 ```
 
 Then some more technical parameters:
 
 ```{r define_parms}
-schema.vintage <- "V4.1.0"
-schema.urlbase <- "https://lehd.ces.census.gov/data/schema"
-# j2jtype <- "j2j"
-j2j.seas <- "s"
-# the data area
-j2j.urlbase <- "https://lehd.ces.census.gov/data/j2j"
 j2jr.url <- paste(j2j.urlbase,j2j.vintage,"j2jr",j2j.state,sep = "/")
 j2jr.file <- paste("j2jr",j2j.state,"all.csv.gz",sep="_")
 j2j.url <- paste(j2j.urlbase,j2j.vintage,"j2j",j2j.state,sep = "/")
