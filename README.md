@@ -1,3 +1,4 @@
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1027886.svg)](https://doi.org/10.5281/zenodo.1027886)
 # A draft replicable report using J2J data from the U.S. Census Bureau
 
 This is a replicable document, allowing one to dynamically create a "press release" style document based on a particular release of J2J data.
